@@ -23,6 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	FVector GetBoidVelocity() { return mVelocity;  }
+	void SetBoidVelocity(const FVector vel) { mVelocity = vel; }
+
 private:
+	FVector mVelocity;
 	bool AddSphereMesh();
 };

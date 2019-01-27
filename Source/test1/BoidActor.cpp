@@ -15,6 +15,8 @@ ConstructorHelpers::FObjectFinder<UStaticMesh> *SphereVisualAssetPtr = nullptr;
 // Sets default values
 ABoidActor::ABoidActor()
 {
+	mVelocity = FVector(((rand() % 20) - 10) / 10.f, ((rand() % 20) - 10)/10.f, ((rand() % 20) - 10) / 10.f);
+
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -35,7 +37,7 @@ void ABoidActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BoidActor BeginPlay"));
+//	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BoidActor BeginPlay"));
 
 }
 
@@ -44,6 +46,11 @@ void ABoidActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+#if 0
+	FVector curPos = GetActorLocation();
+	curPos.Z += .5f;
+	SetActorLocation(curPos);
+#endif
 }
 
 bool ABoidActor::AddSphereMesh()
@@ -54,11 +61,11 @@ bool ABoidActor::AddSphereMesh()
 	if (SphereVisualAssetPtr->Succeeded())
 	{
 		MyMeshComponent->SetStaticMesh(SphereVisualAssetPtr->Object);
-		MyMeshComponent->SetWorldScale3D(FVector(0.5f));
+		MyMeshComponent->SetWorldScale3D(FVector(0.1f));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MOOSE DID NOT FIND SPHERE"));
+		UE_LOG(LogTemp, Warning, TEXT("MOOSE: DID NOT FIND SPHERE"));
 	}
 
 	FVector newlocation(0, 0, 0);

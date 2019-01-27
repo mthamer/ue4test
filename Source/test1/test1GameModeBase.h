@@ -6,9 +6,12 @@
 #include "GameFramework/GameModeBase.h"
 #include "test1GameModeBase.generated.h"
 
+#define NUM_BOIDS 25
+
 /**
  * 
  */
+class ABoidActor;
 UCLASS()
 class TEST1_API Atest1GameModeBase : public AGameModeBase
 {
@@ -16,5 +19,14 @@ class TEST1_API Atest1GameModeBase : public AGameModeBase
 
 		virtual void BeginPlay() override;
 
-	
+public:
+	Atest1GameModeBase();
+	virtual void Tick(float DeltaTime) override;
+
+private:
+	void MoveAllBoids(float DeltaTime);
+	FVector Rule1(ABoidActor *b, float DeltaTime);
+	FVector Rule2(ABoidActor *b, float DeltaTime);
+	FVector Rule3(ABoidActor *b, float DeltaTime);
+	ABoidActor *mFlock[NUM_BOIDS];
 };

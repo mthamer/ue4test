@@ -30,7 +30,7 @@ void Atest1GameModeBase::BeginPlay()
 		for (int j = 0; j < 5; j++)
 		{
 //			FVector newlocation(0, j*scaleFactor-offset, i*scaleFactor+offset);
-			FVector newlocation(0, (rand() % 2000) - 1000, (rand() % 2000) - 1000);
+			FVector newlocation(0, (rand() % 1000) - 500, (rand() % 1000) - 500);
 			mFlock[i*5+j] = GetWorld()->SpawnActor<ABoidActor>(ABoidActor::StaticClass(), newlocation, rotation, SpawnInfo);
 		}
 	}
@@ -57,13 +57,13 @@ void wrap(float &f)
 
 void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 {
-	const float speed = 10.f;
+	const float speed = 20.f;
 	FVector v1, v2, v3;
 	for (ABoidActor *b : mFlock)
 	{
 		v1 = Rule1(b, DeltaTime);
-		v2 = Rule1(b, DeltaTime);
-		v3 = Rule1(b, DeltaTime);
+		v2 = Rule2(b, DeltaTime);
+		v3 = Rule3(b, DeltaTime);
 
 		FVector vel = b->GetBoidVelocity();
 		vel = vel + v1 + v2 + v3;
@@ -73,10 +73,12 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 		FVector pos = b->GetActorLocation();
 		pos = pos + vel;
 
+#if 0
 		// wrap coords
 		wrap(pos.X);
 		wrap(pos.Y);
 		wrap(pos.Z);
+#endif
 
 		b->SetActorLocation(pos);
 	}
@@ -96,14 +98,15 @@ FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
 
 	pos = pos / (NUM_BOIDS - 1);
 
-	FVector dir = (pos - bIn->GetActorLocation()) / 100.0f;
+	FVector dir = (pos - bIn->GetActorLocation()) / 50.0f;
 	return dir;
 }
 
 // Rule 2: Boids try to keep a small distance away from other objects(including other boids).
 FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
 {
-	const float nearDist = 500.0f;
+	int closeCnt = 0;
+	const float nearDist = 100.0f;
 	FVector pos = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
 	{
@@ -111,10 +114,20 @@ FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
 		{
 			FVector vecTo = b->GetActorLocation() - bIn->GetActorLocation();
 			if (vecTo.Size() < nearDist)
+			{
 				pos = pos - vecTo;
+				closeCnt++;
+			}
 		}
 	}
 
+	if (closeCnt > 0)
+	{
+		wchar_t tmp[64];
+		swprintf(tmp, 64, L"MOOSE: found %d close boids", closeCnt);
+		UE_LOG(LogTemp, Warning, tmp);
+	}
+	pos = pos / 25.f;
 	return pos;
 }
 

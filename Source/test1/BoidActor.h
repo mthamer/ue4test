@@ -27,6 +27,8 @@ public:
 	void SetBoidVelocity(const FVector vel) { mVelocity = vel; }
 
 private:
+	UPROPERTY(EditAnywhere)
+
 	FVector mVelocity;
 	bool AddSphereMesh();
 };

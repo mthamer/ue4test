@@ -7,10 +7,12 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "ConstructorHelpers.h"
 
 // STATIC
 ConstructorHelpers::FObjectFinder<UStaticMesh> *SphereVisualAssetPtr = nullptr;
+ConstructorHelpers::FObjectFinder<UMaterial> *TechMaterialPtr = nullptr;
 
 // Sets default values
 ABoidActor::ABoidActor()
@@ -25,7 +27,15 @@ ABoidActor::ABoidActor()
 	SphereVisualAssetPtr = &SphereVisualAsset;
 	if (!SphereVisualAsset.Succeeded())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MOOSE DID NOT FIND SPHERE"));
+		UE_LOG(LogTemp, Warning, TEXT("MOOSE: DID NOT FIND SPHERE"));
+	}
+
+	// find tech hex material 
+	static ConstructorHelpers::FObjectFinder<UMaterial> TechMaterial(TEXT("/Game/StarterContent/Materials/M_Tech_Hex_Tile.M_Tech_Hex_Tile"));
+	TechMaterialPtr = &TechMaterial;
+	if (!TechMaterial.Succeeded())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MOOSE: Did not find material"));
 	}
 
 	AddSphereMesh();
@@ -36,8 +46,6 @@ ABoidActor::ABoidActor()
 void ABoidActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-//	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BoidActor BeginPlay"));
 
 }
 
@@ -45,12 +53,6 @@ void ABoidActor::BeginPlay()
 void ABoidActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-#if 0
-	FVector curPos = GetActorLocation();
-	curPos.Z += .5f;
-	SetActorLocation(curPos);
-#endif
 }
 
 bool ABoidActor::AddSphereMesh()
@@ -67,6 +69,11 @@ bool ABoidActor::AddSphereMesh()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("MOOSE: DID NOT FIND SPHERE"));
 	}
+
+	// set material
+	UMaterial *techMaterial = TechMaterialPtr->Object;
+	UMaterialInterface *techMatInst = UMaterialInstanceDynamic::Create(techMaterial, MyMeshComponent);
+	MyMeshComponent->SetMaterial(0, techMatInst);
 
 	FVector newlocation(0, 0, 0);
 	FRotator rotation = FRotator::ZeroRotator;

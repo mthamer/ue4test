@@ -6,7 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "test1GameModeBase.generated.h"
 
-#define NUM_BOIDS 25
+#define NUM_BOIDS 50
 
 /**
  * 

@@ -1,5 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+//
+// TODO:
+// - expose flock params to editor
+// - create dynamic camera which follows flock from a dist
+// - add bird model with rotation and animation
+//
+
 #include "test1GameModeBase.h"
 
 #include "Engine/World.h"
@@ -15,7 +22,7 @@ Atest1GameModeBase::Atest1GameModeBase()
 void Atest1GameModeBase::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BEGIN PLAY"));
-	
+
 	Super::BeginPlay();
 
 	FRotator rotation = FRotator::ZeroRotator;
@@ -23,20 +30,13 @@ void Atest1GameModeBase::BeginPlay()
 	SpawnInfo.Owner = this;
 	SpawnInfo.Instigator = Instigator;
 
-	float scaleFactor = 40.0f;
-	float offset = 100.0f;
-	for (int i = 0; i < 5; i++)
+	const int maxDim = 500;
+	for (int i = 0; i < NUM_BOIDS; i++)
 	{
-		for (int j = 0; j < 5; j++)
-		{
-//			FVector newlocation(0, j*scaleFactor-offset, i*scaleFactor+offset);
-			FVector newlocation(0, (rand() % 1000) - 500, (rand() % 1000) - 500);
-			mFlock[i*5+j] = GetWorld()->SpawnActor<ABoidActor>(ABoidActor::StaticClass(), newlocation, rotation, SpawnInfo);
-		}
+		FVector newlocation(0, (rand() % maxDim*2) - maxDim, (rand() % maxDim*2) - maxDim);
+		mFlock[i] = GetWorld()->SpawnActor<ABoidActor>(ABoidActor::StaticClass(), newlocation, rotation, SpawnInfo);
 	}
 }
-
-
 
 void Atest1GameModeBase::Tick(float DeltaTime)
 {
@@ -57,8 +57,10 @@ void wrap(float &f)
 
 void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 {
-	const float speed = 20.f;
-	FVector v1, v2, v3;
+	const float speed = 5.f;
+	FVector v1 = FVector::ZeroVector;
+	FVector v2 = FVector::ZeroVector;
+	FVector v3 = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
 	{
 		v1 = Rule1(b, DeltaTime);
@@ -67,20 +69,18 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 
 		FVector vel = b->GetBoidVelocity();
 		vel = vel + v1 + v2 + v3;
-		vel = vel * DeltaTime * speed;
 		b->SetBoidVelocity(vel);
 
-		FVector pos = b->GetActorLocation();
-		pos = pos + vel;
+		FVector newPos = b->GetActorLocation() + vel * DeltaTime * speed;
 
 #if 0
 		// wrap coords
-		wrap(pos.X);
-		wrap(pos.Y);
-		wrap(pos.Z);
+		wrap(newPos.X);
+		wrap(newPos.Y);
+		wrap(newPos.Z);
 #endif
 
-		b->SetActorLocation(pos);
+		b->SetActorLocation(newPos);
 	}
 }
 
@@ -98,7 +98,8 @@ FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
 
 	pos = pos / (NUM_BOIDS - 1);
 
-	FVector dir = (pos - bIn->GetActorLocation()) / 50.0f;
+	FVector dir = (pos - bIn->GetActorLocation());
+	dir.Normalize();
 	return dir;
 }
 
@@ -106,7 +107,7 @@ FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
 FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
 {
 	int closeCnt = 0;
-	const float nearDist = 100.0f;
+	const float nearDist = 100.0f;		// sphere diameter is 10
 	FVector pos = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
 	{
@@ -127,7 +128,8 @@ FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
 		swprintf(tmp, 64, L"MOOSE: found %d close boids", closeCnt);
 		UE_LOG(LogTemp, Warning, tmp);
 	}
-	pos = pos / 25.f;
+
+	pos.Normalize();
 	return pos;
 }
 
@@ -143,8 +145,9 @@ FVector Atest1GameModeBase::Rule3(ABoidActor *bIn, float DeltaTime)
 		}
 	}
 
-	vel = vel / (NUM_BOIDS - 1);
-
-	FVector dir = (vel - bIn->GetBoidVelocity()) / 8.0f;
+//	vel = vel / (NUM_BOIDS - 1);
+//	FVector dir = (vel - bIn->GetBoidVelocity());
+	FVector dir = vel;
+	dir.Normalize();
 	return dir;
 }

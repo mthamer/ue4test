@@ -63,7 +63,7 @@ bool ABoidActor::AddSphereMesh()
 	if (SphereVisualAssetPtr->Succeeded())
 	{
 		MyMeshComponent->SetStaticMesh(SphereVisualAssetPtr->Object);
-		MyMeshComponent->SetWorldScale3D(FVector(0.1f));	// change radius from 50 to 5
+		MyMeshComponent->SetWorldScale3D(FVector(0.25f));	// change radius from 50 to 12.5
 	}
 	else
 	{

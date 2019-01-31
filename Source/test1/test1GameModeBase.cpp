@@ -1,5 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+/*
+	The primary class that specifies which classes to use(PlayerController, Pawn, HUD, GameState, PlayerState)
+	and commonly used to specify game rules for modes such as ‘Capture the Flag’ where it could handle the flags,
+	or to handle ‘wave spawns’ in a wave based shooter.Handles other key features like spawning the player as well.
+*/
+
 //
 // TODO:
 // - expose flock params to editor
@@ -11,12 +17,28 @@
 
 #include "Engine/World.h"
 #include "BoidActor.h"
+#include "MyPlayerController.h"
 
 Atest1GameModeBase::Atest1GameModeBase()
 {
 	// enable ticking
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	PrimaryActorTick.bCanEverTick = true;
+
+	//tell your custom game mode to use your custom player controller
+	PlayerControllerClass = AMyPlayerController::StaticClass();
+
+#if 0
+	//you can set whatever (if any) other default framework classes
+	//you wish for this game mode as well
+	DefaultPawnClass = ACustomPawn::StaticClass();
+	GameStateClass = ACustomGameState::StaticClass();
+	HUDClass = ACustomGameHUD::StaticClass();
+	ReplaySpectatorPlayerControllerClass = ACustomReplaySpectatorPlayerController::StaticClass();
+	SpectatorClass = ACustomSpectatorClass::StaticClass();
+#endif
+
+	mFlockCenter = FVector::ZeroVector;
 }
 
 void Atest1GameModeBase::BeginPlay()
@@ -33,9 +55,10 @@ void Atest1GameModeBase::BeginPlay()
 	const int maxDim = 500;
 	for (int i = 0; i < NUM_BOIDS; i++)
 	{
-		FVector newlocation(0, (rand() % maxDim*2) - maxDim, (rand() % maxDim*2) - maxDim);
+		FVector newlocation(0, (rand() % maxDim * 2) - maxDim, (rand() % maxDim * 2) - maxDim);
 		mFlock[i] = GetWorld()->SpawnActor<ABoidActor>(ABoidActor::StaticClass(), newlocation, rotation, SpawnInfo);
 	}
+	CalcFlockCenter();
 }
 
 void Atest1GameModeBase::Tick(float DeltaTime)
@@ -44,6 +67,7 @@ void Atest1GameModeBase::Tick(float DeltaTime)
 
 	// update the position and velocity of each boid
 	MoveAllBoids(DeltaTime);
+	CalcFlockCenter();
 }
 
 void wrap(float &f)
@@ -97,7 +121,6 @@ FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
 	}
 
 	pos = pos / (NUM_BOIDS - 1);
-
 	FVector dir = (pos - bIn->GetActorLocation());
 	dir.Normalize();
 	return dir;
@@ -145,9 +168,25 @@ FVector Atest1GameModeBase::Rule3(ABoidActor *bIn, float DeltaTime)
 		}
 	}
 
-//	vel = vel / (NUM_BOIDS - 1);
-//	FVector dir = (vel - bIn->GetBoidVelocity());
+	//	vel = vel / (NUM_BOIDS - 1);
+	//	FVector dir = (vel - bIn->GetBoidVelocity());
 	FVector dir = vel;
 	dir.Normalize();
 	return dir;
+}
+
+void Atest1GameModeBase::CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("MOOSE: CalcCamera"));
+
+}
+
+void Atest1GameModeBase::CalcFlockCenter()
+{
+	FVector pos = FVector::ZeroVector;
+	for (ABoidActor *b : mFlock)
+	{
+		pos = pos + b->GetActorLocation();
+	}
+	mFlockCenter = pos / NUM_BOIDS;
 }

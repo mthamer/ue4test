@@ -21,6 +21,7 @@
 #include "Engine/World.h"
 #include "BoidActor.h"
 #include "MyPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 Atest1GameModeBase::Atest1GameModeBase()
 {
@@ -59,7 +60,7 @@ void Atest1GameModeBase::BeginPlay()
 	const int maxDim = 500;
 	for (int i = 0; i < NUM_BOIDS; i++)
 	{
-		FVector newlocation(0, (rand() % maxDim * 2) - maxDim, (rand() % maxDim * 2) - maxDim);
+		FVector newlocation((rand() % maxDim * 2) - maxDim, (rand() % maxDim * 2) - maxDim, (rand() % maxDim * 2) - maxDim);
 		mFlock[i] = GetWorld()->SpawnActor<ABoidActor>(ABoidActor::StaticClass(), newlocation, rotation, SpawnInfo);
 	}
 	CalcFlockCenter();
@@ -68,10 +69,11 @@ void Atest1GameModeBase::BeginPlay()
 void Atest1GameModeBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 	// update the position and velocity of each boid
 	MoveAllBoids(DeltaTime);
 	CalcFlockCenter();
+	CalcFlockGoal();
 }
 
 void wrap(float &f)
@@ -85,7 +87,7 @@ void wrap(float &f)
 
 void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 {
-	const float speed = 5.f;
+	const float speed = 2.f;
 	FVector v1 = FVector::ZeroVector;
 	FVector v2 = FVector::ZeroVector;
 	FVector v3 = FVector::ZeroVector;
@@ -99,6 +101,8 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 
 		FVector vel = b->GetBoidVelocity();
 		vel = vel + v1 + v2 + v3 + v4;
+		// TODO - add weights for each vel component
+		// TODO - cap max boid speed?
 		b->SetBoidVelocity(vel);
 
 		FVector newPos = b->GetActorLocation() + vel * DeltaTime * speed;
@@ -197,4 +201,23 @@ void Atest1GameModeBase::CalcFlockCenter()
 		pos = pos + b->GetActorLocation();
 	}
 	mFlockCenter = pos / NUM_BOIDS;
+}
+
+// set the flock goal to the location of DefaultPawn
+void Atest1GameModeBase::CalcFlockGoal()
+{
+	// search for FlockCamera actor, TODO - expose this in editor
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APawn::StaticClass(), FoundActors);
+
+	for (int i = 0; i < FoundActors.Num(); i++)
+	{
+		if (FoundActors[i]->GetName().Contains("DefaultPawn"))
+		{
+			mFlockGoal = FoundActors[i]->GetActorLocation();
+			return;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("MOOSE: Couldn't find DefaultPawn"));
 }

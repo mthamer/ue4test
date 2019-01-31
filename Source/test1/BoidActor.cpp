@@ -18,6 +18,7 @@ ConstructorHelpers::FObjectFinder<UMaterial> *TechMaterialPtr = nullptr;
 ABoidActor::ABoidActor()
 {
 	mVelocity = FVector(((rand() % 20) - 10) / 10.f, ((rand() % 20) - 10)/10.f, ((rand() % 20) - 10) / 10.f);
+	mVelocity.Normalize();
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -57,7 +58,7 @@ void ABoidActor::Tick(float DeltaTime)
 
 bool ABoidActor::AddSphereMesh()
 {
-	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BoidActor AddSphereMesh"));
+//	UE_LOG(LogTemp, Warning, TEXT("MOOSE: BoidActor AddSphereMesh"));
 
 	UStaticMeshComponent* MyMeshComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), TEXT("Mesh"));
 	if (SphereVisualAssetPtr->Succeeded())

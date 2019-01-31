@@ -17,8 +17,10 @@ class TEST1_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
+	virtual void BeginPlay() override;
+
 	// declare variables
 	UPROPERTY(EditAnywhere)
-	AActor* CameraOne;
+	ACameraActor* mFlockCamera;
 	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult);
 };

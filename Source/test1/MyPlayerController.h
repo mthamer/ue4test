@@ -17,5 +17,8 @@ class TEST1_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
+	// declare variables
+	UPROPERTY(EditAnywhere)
+	AActor* CameraOne;
 	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult);
 };

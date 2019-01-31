@@ -4,12 +4,15 @@
 	The primary class that specifies which classes to use(PlayerController, Pawn, HUD, GameState, PlayerState)
 	and commonly used to specify game rules for modes such as ‘Capture the Flag’ where it could handle the flags,
 	or to handle ‘wave spawns’ in a wave based shooter.Handles other key features like spawning the player as well.
+
+	Unreal Engine uses a left-handed, z-up world coordinate system
 */
 
 //
 // TODO:
 // - expose flock params to editor
-// - create dynamic camera which follows flock from a dist
+// - set fixed camera which looks at flock center (get transform from 'FlockCamera' or set camera to it)
+// - Set flock goal to location of 'DefaultPawn'
 // - add bird model with rotation and animation
 //
 
@@ -39,6 +42,7 @@ Atest1GameModeBase::Atest1GameModeBase()
 #endif
 
 	mFlockCenter = FVector::ZeroVector;
+	mFlockGoal = FVector::ZeroVector;
 }
 
 void Atest1GameModeBase::BeginPlay()
@@ -85,14 +89,16 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 	FVector v1 = FVector::ZeroVector;
 	FVector v2 = FVector::ZeroVector;
 	FVector v3 = FVector::ZeroVector;
+	FVector v4 = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
 	{
-		v1 = Rule1(b, DeltaTime);
-		v2 = Rule2(b, DeltaTime);
-		v3 = Rule3(b, DeltaTime);
+		v1 = RuleMoveTowardsFlockCenter(b, DeltaTime);
+		v2 = RuleAvoidBoids(b, DeltaTime);
+		v3 = RuleMatchVelocity(b, DeltaTime);
+		v4 = RuleMoveTowardsGoal(b, DeltaTime);
 
 		FVector vel = b->GetBoidVelocity();
-		vel = vel + v1 + v2 + v3;
+		vel = vel + v1 + v2 + v3 + v4;
 		b->SetBoidVelocity(vel);
 
 		FVector newPos = b->GetActorLocation() + vel * DeltaTime * speed;
@@ -109,7 +115,7 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 }
 
 // Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
-FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
+FVector Atest1GameModeBase::RuleMoveTowardsFlockCenter(ABoidActor *bIn, float DeltaTime)
 {
 	FVector pos = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
@@ -126,8 +132,8 @@ FVector Atest1GameModeBase::Rule1(ABoidActor *bIn, float DeltaTime)
 	return dir;
 }
 
-// Rule 2: Boids try to keep a small distance away from other objects(including other boids).
-FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
+// Rule 2: Boids try to keep a small distance away from other boids.
+FVector Atest1GameModeBase::RuleAvoidBoids(ABoidActor *bIn, float DeltaTime)
 {
 	int closeCnt = 0;
 	const float nearDist = 100.0f;		// sphere diameter is 10
@@ -157,7 +163,7 @@ FVector Atest1GameModeBase::Rule2(ABoidActor *bIn, float DeltaTime)
 }
 
 //Rule 3: Boids try to match velocity with other boids.
-FVector Atest1GameModeBase::Rule3(ABoidActor *bIn, float DeltaTime)
+FVector Atest1GameModeBase::RuleMatchVelocity(ABoidActor *bIn, float DeltaTime)
 {
 	FVector vel = FVector::ZeroVector;
 	for (ABoidActor *b : mFlock)
@@ -175,10 +181,12 @@ FVector Atest1GameModeBase::Rule3(ABoidActor *bIn, float DeltaTime)
 	return dir;
 }
 
-void Atest1GameModeBase::CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult)
+// Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+FVector Atest1GameModeBase::RuleMoveTowardsGoal(ABoidActor *bIn, float DeltaTime)
 {
-	UE_LOG(LogTemp, Warning, TEXT("MOOSE: CalcCamera"));
-
+	FVector dir = (mFlockGoal - bIn->GetActorLocation());
+	dir.Normalize();
+	return dir;
 }
 
 void Atest1GameModeBase::CalcFlockCenter()

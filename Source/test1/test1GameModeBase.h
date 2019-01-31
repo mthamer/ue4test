@@ -22,17 +22,20 @@ class TEST1_API Atest1GameModeBase : public AGameModeBase
 public:
 	Atest1GameModeBase();
 	virtual void Tick(float DeltaTime) override;
-	virtual void CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
 
 	const FVector &GetFlockCenter() { return mFlockCenter;  }
+	void SetFlockGoal(const FVector &goal) { mFlockGoal = goal; }
 
 private:
 	void MoveAllBoids(float DeltaTime);
 	void CalcFlockCenter();
 
-	FVector Rule1(ABoidActor *b, float DeltaTime);
-	FVector Rule2(ABoidActor *b, float DeltaTime);
-	FVector Rule3(ABoidActor *b, float DeltaTime);
+	FVector RuleMoveTowardsFlockCenter(ABoidActor *b, float DeltaTime);
+	FVector RuleAvoidBoids(ABoidActor *b, float DeltaTime);
+	FVector RuleMatchVelocity(ABoidActor *b, float DeltaTime);
+	FVector RuleMoveTowardsGoal(ABoidActor *b, float DeltaTime);
+
 	ABoidActor *mFlock[NUM_BOIDS];
 	FVector mFlockCenter;
+	FVector mFlockGoal;
 };

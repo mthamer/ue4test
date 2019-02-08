@@ -10,10 +10,8 @@
 
 //
 // TODO:
-// - expose flock params to editor
-// - set fixed camera which looks at flock center (get transform from 'FlockCamera' or set camera to it)
-// - Set flock goal to location of 'DefaultPawn'
 // - add bird model with rotation and animation
+// - Bounding the position
 //
 
 #include "test1GameModeBase.h"
@@ -44,6 +42,14 @@ Atest1GameModeBase::Atest1GameModeBase()
 
 	mFlockCenter = FVector::ZeroVector;
 	mFlockGoal = FVector::ZeroVector;
+
+	// default values
+	Speed = 4.f;
+	FlockCenterWeight = 2.f;
+	AvoidBoidsWeight = 3.f;
+	MatchVelocityWeight = 1.f;
+	MoveTowardsGoalWeight = 3.f;
+	MaxVelMagnitude = 80.0f;
 }
 
 void Atest1GameModeBase::BeginPlay()
@@ -69,7 +75,7 @@ void Atest1GameModeBase::BeginPlay()
 void Atest1GameModeBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	// update the position and velocity of each boid
 	MoveAllBoids(DeltaTime);
 	CalcFlockCenter();
@@ -85,9 +91,20 @@ void wrap(float &f)
 			f = 1000;
 }
 
+//
+// cap the velocity
+//
+void Atest1GameModeBase::LimitVelocity(FVector &vel, float limit)
+{
+	if (vel.Size() > limit)
+	{
+		vel.Normalize();
+		vel = vel * limit;
+	}
+}
+
 void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 {
-	const float speed = 2.f;
 	FVector v1 = FVector::ZeroVector;
 	FVector v2 = FVector::ZeroVector;
 	FVector v3 = FVector::ZeroVector;
@@ -100,12 +117,11 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 		v4 = RuleMoveTowardsGoal(b, DeltaTime);
 
 		FVector vel = b->GetBoidVelocity();
-		vel = vel + v1 + v2 + v3 + v4;
-		// TODO - add weights for each vel component
-		// TODO - cap max boid speed?
+		vel = vel + v1 * FlockCenterWeight + v2 * AvoidBoidsWeight + v3 * MatchVelocityWeight + v4 * MoveTowardsGoalWeight;
+		LimitVelocity(vel, MaxVelMagnitude);
 		b->SetBoidVelocity(vel);
 
-		FVector newPos = b->GetActorLocation() + vel * DeltaTime * speed;
+		FVector newPos = b->GetActorLocation() + vel * DeltaTime * Speed;
 
 #if 0
 		// wrap coords
@@ -118,7 +134,7 @@ void Atest1GameModeBase::MoveAllBoids(float DeltaTime)
 	}
 }
 
-// Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+// Rule: Boids try to fly towards the centre of mass of neighbouring boids.
 FVector Atest1GameModeBase::RuleMoveTowardsFlockCenter(ABoidActor *bIn, float DeltaTime)
 {
 	FVector pos = FVector::ZeroVector;
@@ -136,7 +152,7 @@ FVector Atest1GameModeBase::RuleMoveTowardsFlockCenter(ABoidActor *bIn, float De
 	return dir;
 }
 
-// Rule 2: Boids try to keep a small distance away from other boids.
+// Rule: Boids try to keep a small distance away from other boids.
 FVector Atest1GameModeBase::RuleAvoidBoids(ABoidActor *bIn, float DeltaTime)
 {
 	int closeCnt = 0;
@@ -166,7 +182,7 @@ FVector Atest1GameModeBase::RuleAvoidBoids(ABoidActor *bIn, float DeltaTime)
 	return pos;
 }
 
-//Rule 3: Boids try to match velocity with other boids.
+//Rule: Boids try to match velocity with other boids.
 FVector Atest1GameModeBase::RuleMatchVelocity(ABoidActor *bIn, float DeltaTime)
 {
 	FVector vel = FVector::ZeroVector;

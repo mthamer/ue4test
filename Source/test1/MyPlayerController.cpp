@@ -47,6 +47,13 @@ void AMyPlayerController::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResul
 	if (mFlockCamera)
 		camRot = mFlockCamera->GetActorRotation();
 
+	//
+	// Rotate camera to look at flock center
+	//
+	FVector camDir = flockCenter - camLocation;
+	camDir.Normalize();
+	camRot = camDir.Rotation();
+
 	OutResult.Location = camLocation;
 	OutResult.Rotation = camRot;
 	//	OutResult.FOV = 135.0f;
